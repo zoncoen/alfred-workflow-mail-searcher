@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>bundleid</key>
+	<string>net.zoncoen.alfred-workflow.mail-searcher</string>
+	<key>connections</key>
+	<dict>
+		<key>01BDCE2A-F159-442F-9B27-860C3C65FA4D</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>3D8FD3B1-2949-4779-B062-CDDBAA3BB921</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+			</dict>
+		</array>
+		<key>D108B2DC-35F3-409E-8012-A8B2D0FFED28</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>3D8FD3B1-2949-4779-B062-CDDBAA3BB921</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+			</dict>
+		</array>
+	</dict>
+	<key>createdby</key>
+	<string>Kenta Mori (@zoncoen)</string>
+	<key>description</key>
+	<string>The workflow to search mails on Mail.app.</string>
+	<key>disabled</key>
+	<false/>
+	<key>name</key>
+	<string>Mail Searcher</string>
+	<key>objects</key>
+	<array>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>argumenttype</key>
+				<integer>0</integer>
+				<key>escaping</key>
+				<integer>127</integer>
+				<key>keyword</key>
+				<string>mls</string>
+				<key>runningsubtext</key>
+				<string>Searching...</string>
+				<key>script</key>
+				<string>/usr/bin/perl -Ilocal/lib/perl5 -Ilib ./mail-searcher.pl {query}</string>
+				<key>subtext</key>
+				<string>Keyword: mls - Mail Searcher</string>
+				<key>title</key>
+				<string>Search messages for "{query}".</string>
+				<key>type</key>
+				<integer>0</integer>
+				<key>withspace</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.scriptfilter</string>
+			<key>uid</key>
+			<string>D108B2DC-35F3-409E-8012-A8B2D0FFED28</string>
+			<key>version</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>escaping</key>
+				<integer>126</integer>
+				<key>script</key>
+				<string>osascript open_message.scpt "{query}"</string>
+				<key>type</key>
+				<integer>0</integer>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.script</string>
+			<key>uid</key>
+			<string>3D8FD3B1-2949-4779-B062-CDDBAA3BB921</string>
+			<key>version</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>argumenttype</key>
+				<integer>1</integer>
+				<key>escaping</key>
+				<integer>127</integer>
+				<key>keyword</key>
+				<string>mlu</string>
+				<key>runningsubtext</key>
+				<string>Searching...</string>
+				<key>script</key>
+				<string>/usr/bin/perl -Ilocal/lib/perl5 -Ilib ./mail-searcher.pl "is:unread\ {query}"</string>
+				<key>subtext</key>
+				<string>Keyword: mlu - Mail Searcher</string>
+				<key>title</key>
+				<string>Search unread messages for "{query}".</string>
+				<key>type</key>
+				<integer>0</integer>
+				<key>withspace</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.scriptfilter</string>
+			<key>uid</key>
+			<string>01BDCE2A-F159-442F-9B27-860C3C65FA4D</string>
+			<key>version</key>
+			<integer>0</integer>
+		</dict>
+	</array>
+	<key>readme</key>
+	<string></string>
+	<key>uidata</key>
+	<dict>
+		<key>01BDCE2A-F159-442F-9B27-860C3C65FA4D</key>
+		<dict>
+			<key>ypos</key>
+			<real>250</real>
+		</dict>
+		<key>3D8FD3B1-2949-4779-B062-CDDBAA3BB921</key>
+		<dict>
+			<key>ypos</key>
+			<real>170</real>
+		</dict>
+		<key>D108B2DC-35F3-409E-8012-A8B2D0FFED28</key>
+		<dict>
+			<key>ypos</key>
+			<real>100</real>
+		</dict>
+	</dict>
+	<key>webaddress</key>
+	<string></string>
+</dict>
+</plist>
