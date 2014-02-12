@@ -182,7 +182,7 @@ my $api = MacOSX::App::Mail::API->new;
 my $argv = $ARGV[0];
 my @keywords = map { Encode::decode( 'utf-8-mac', $_ ) } split( /\\\s/, $argv );
 
-# Filter completion.
+# Advanced search operator completion.
 if ( $keywords[$#keywords] =~ /^(is|from|to|subject):/ and $argv !~ /\s+$/ ) {
     get_candidates( \@keywords, $api );
 }
