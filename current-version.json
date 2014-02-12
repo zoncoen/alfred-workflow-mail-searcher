@@ -1,5 +1,5 @@
 {
-    "version": 0.01,
+    "version": 0.02,
     "download_url": "https://raw.github.com/zoncoen/alfred-workflow-mail-searcher/master/MailSearcher.alfredworkflow",
     "description": "The workflow to search mails on Mail.app."
 }
