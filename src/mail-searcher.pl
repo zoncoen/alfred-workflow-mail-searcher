@@ -180,10 +180,12 @@ sub output_items {
 my $api = MacOSX::App::Mail::API->new;
 
 my $argv = $ARGV[0];
-my @keywords = map { Encode::decode( 'utf-8-mac', $_ ) } split( /\\\s/, $argv );
+my $completion = $argv !~ /\s+$/ ? 1 : 0;
+$argv =~ s/\\\s*$//;
+my @keywords = map { Encode::decode( 'utf-8-mac', $_ ) } split( /\s/, $argv );
 
 # Advanced search operator completion.
-if ( $keywords[$#keywords] =~ /^(is|from|to|subject):/ and $argv !~ /\s+$/ ) {
+if ( $keywords[$#keywords] =~ /^(is|from|to|subject):/ and $completion ) {
     get_candidates( \@keywords, $api );
 }
 elsif (@keywords) {
