@@ -137,12 +137,15 @@ sub output_items {
     for my $item (@items) {
         $index++;
         $item = {
-            arg      => "$item->{account_name}:::$item->{mailbox}:::$item->{id}",
-            title    => [ $item->{subject} ? $item->{subject} : 'NO TITLE' ],
+            arg => Encode::decode( 'utf-8-mac', $item->{account_name} ) . ":::"
+                . Encode::decode( 'utf-8-mac', $item->{mailbox} )
+                . ":::$item->{id}",
+            title    => [ $item->{subject} ? Encode::decode( 'utf-8-mac', $item->{subject} ) : 'NO TITLE' ],
             subtitle => $item->{sender} eq ''
             ? [ Time::Piece->strptime( $item->{date_sent}, '%s' ) . " - $item->{sender_address} ($index/$item_num)" ]
-            : [ Time::Piece->strptime( $item->{date_sent}, '%s' )
-                    . " - $item->{sender} <$item->{sender_address}> ($index/$item_num)"
+            : [       Time::Piece->strptime( $item->{date_sent}, '%s' ) . " - "
+                    . Encode::decode( 'utf-8-mac', $item->{sender} )
+                    . " <$item->{sender_address}> ($index/$item_num)"
             ],
             icon => ['icon.png']
         };

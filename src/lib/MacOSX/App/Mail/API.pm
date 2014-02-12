@@ -136,16 +136,16 @@ sub _get_value {
         push @messages,
             {
             id               => $row->[0],
-            subject          => Encode::decode( 'utf-8-mac', $subject_array->[0] ),
-            snippet          => Encode::decode( 'utf-8-mac', $row->[2] ),
+            subject          => $subject_array->[0],
+            snippet          => $row->[2],
             sender_address   => $sender_array->[0],
-            sender           => Encode::decode( 'utf-8-mac', $sender_array->[1] ),
+            sender           => $sender_array->[1],
             reciever_address => $reciever_array->[0],
-            reciever         => Encode::decode( 'utf-8-mac', $reciever_array->[1] ),
+            reciever         => $reciever_array->[1],
             date_sent        => $row->[4],
             account_uri      => $account_uri,
-            account_name     => Encode::decode( 'utf-8-mac', $account_name ),
-            mailbox          => Encode::decode( 'utf-8-mac', uri_unescape( substr( $url->path, 1 ) ) ),
+            account_name     => $account_name,
+            mailbox          => uri_unescape( substr( $url->path, 1 ) ),
             };
     }
     return \@messages;
