@@ -1,3 +1,4 @@
 requires 'XML::Simple';
 requires 'Encode::UTF8Mac';
 requires 'Mac::PropertyList';
+requires 'Cache::FileCache';

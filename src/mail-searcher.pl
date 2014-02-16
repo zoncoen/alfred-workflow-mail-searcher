@@ -2,12 +2,13 @@
 use strict;
 use warnings;
 use utf8;
-use 5.010000;
+use 5.014000;
 use autodie;
 
 use Time::Piece;
 use XML::Simple;
 use Encode::UTF8Mac;
+use Cache::FileCache;
 
 use MacOSX::App::Mail::API;
 
@@ -160,20 +161,45 @@ sub get_items {
     );
 }
 
-my $api = MacOSX::App::Mail::API->new;
+# Arguments required.
+if ( !defined( $ARGV[0] ) ) {
+    exit;
+}
 
 my $argv = $ARGV[0];
 my $completion = $argv !~ /\s+$/ ? 1 : 0;
-$argv =~ s/\\\s*$//;
-my @keywords = map { Encode::decode( 'utf-8-mac', $_ ) } split( /\s/, $argv );
+my @keywords = map { Encode::decode( 'utf-8-mac', $_ ) } split( /\s/, $argv =~ s/\\\s*$//r );
 
-# Advanced search operator completion.
-if ( $keywords[$#keywords] =~ /^(is|from|to|subject):/ and $completion ) {
-    get_candidates( \@keywords, $api );
+my $api = MacOSX::App::Mail::API->new;
+
+my $cache = Cache::FileCache->new(
+    {   cache_root         => '/tmp',
+        namespace          => 'AlfredWorkflowMailSearcher',
+        default_expires_in => '5minutes',
+        auto_purge_on_set  => 1,
+        auto_purge_on_get  => 1,
+    }
+);
+
+# Try to fetch the data from the cache.
+my $cache_data = $cache->get($argv);
+
+if ( defined($cache_data) ) {
+    print $cache_data;
 }
-elsif (@keywords) {
-    my $result = $api->search(@keywords);
-    output_items( $result, \@keywords );
+else {
+    # Advanced search operator completion.
+    if ( $keywords[$#keywords] =~ /^(is|from|to|subject):/ and $completion ) {
+        my $candidates = get_candidates( \@keywords, $api );
+        print $candidates;
+        $cache->set( $argv, $candidates );
+    }
+    else {
+        my $result = $api->search(@keywords);
+        my $items = get_items( $result, \@keywords );
+        print $items;
+        $cache->set( $argv, $items );
+    }
 }
 
 $api->disconnect;

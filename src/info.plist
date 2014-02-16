@@ -97,7 +97,7 @@
 				<key>runningsubtext</key>
 				<string>Searching...</string>
 				<key>script</key>
-				<string>/usr/bin/perl -Ilocal/lib/perl5 -Ilib ./mail-searcher.pl "is:unread\ {query}"</string>
+				<string>/usr/bin/perl -Ilocal/lib/perl5 -Ilib ./mail-searcher.pl "is:unread {query}"</string>
 				<key>subtext</key>
 				<string>Keyword: mlu - Mail Searcher</string>
 				<key>title</key>

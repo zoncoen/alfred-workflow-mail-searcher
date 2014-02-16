@@ -70,7 +70,7 @@ Please report any bugs or feature requests through the GitHub issues at <https:/
 
 ### Development Installation
 
-This project use Carton which is Perl module dependency manager (aka Bundler for Perl).
+This project use [Carton](https://github.com/miyagawa/carton) which is Perl module dependency manager (aka Bundler for Perl).
 
 ```
 $ cd src
