@@ -2,6 +2,8 @@
 
 The Alfred workflow to search messages on Mail.app.
 
+![Mail Searcher animated screenshot](http://zoncoen.github.io/images/mail-searcher.gif)
+
 # Installation
 
 1. Download [MailSearcher.alfredworkflow](https://raw.github.com/zoncoen/alfred-workflow-mail-searcher/master/Mail%20Searcher.alfredworkflow).
