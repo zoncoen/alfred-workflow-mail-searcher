@@ -15,14 +15,14 @@ sub get_candidates {
     my $keywords = shift;
     my $api      = shift;
     my @items    = [];
-    my $operator = pop @$keywords;
+    my $filter = pop @$keywords;
 
-    if ( $operator =~ /^is:/ ) {
-        my $input = $';
+    if ( $filter =~ /^is:/ ) {
+        my $keyword = $';
         my @candidates = ( 'unread', 'read', 'starred' );
 
         for my $candidate (@candidates) {
-            if ( $input eq '' or $candidate =~ /^$input/i ) {
+            if ( $keyword eq '' or $candidate =~ /^$keyword/i ) {
                 my $autocomplete_string = $#$keywords == -1 ? "is:$candidate " : " is:$candidate ";
                 push @items,
                     {
@@ -35,71 +35,49 @@ sub get_candidates {
             }
         }
     }
-    elsif ( $operator =~ /^from:/ ) {
-        my $input         = $';
-        my $candidates    = $api->get_addresses($input);
+    elsif ( $filter =~ /^(from|to):/ ) {
+        my $operator = $&;
+        my $keyword         = $';
+        my $candidates    = $api->get_addresses($keyword);
         my $candidate_num = @$candidates;
         my $index         = 0;
 
         for my $candidate (@$candidates) {
             $index++;
-            my $autocomplete_string
-                = $#$keywords == -1 ? "from:$candidate->{address} " : " from:$candidate->{address} ";
+            my $address             = $candidate->{address};
+            my $sender              = $candidate->{comment} ? Encode::decode( 'utf-8-mac', $candidate->{comment} ) : '';
+            my $autocomplete_string = $#$keywords == -1 ? "$operator$address " : " $operator$address ";
             my $title
-                = $candidate->{comment} eq ''
-                ? $candidate->{address}
-                : "$candidate->{comment} <$candidate->{address}>";
+                = $sender eq ''
+                ? $address
+                : "$sender <$address>";
 
             push @items,
                 {
                 valid        => 'no',
                 autocomplete => join( ' ', @$keywords ) . $autocomplete_string,
-                title        => ["from:$title"],
+                title        => ["$operator$title"],
                 subtitle     => ["Used to specify the sender. ($index/$candidate_num)"],
                 icon         => ['icon.png']
                 };
         }
     }
-    elsif ( $operator =~ /^to:/ ) {
-        my $input         = $';
-        my $candidates    = $api->get_addresses($input);
+    elsif ( $filter =~ /^subject:/ ) {
+        my $keyword         = $';
+        my $candidates    = $api->get_subjects($keyword);
         my $candidate_num = @$candidates;
         my $index         = 0;
 
         for my $candidate (@$candidates) {
             $index++;
-            my $autocomplete_string = $#$keywords == -1 ? "to:$candidate->{address} " : " to:$candidate->{address} ";
-            my $title
-                = $candidate->{comment} eq ''
-                ? $candidate->{address}
-                : "$candidate->{comment} <$candidate->{address}>";
+            my $subject = Encode::decode( 'utf-8-mac', $candidate->{subject} );
+            my $autocomplete_string = $#$keywords == -1 ? "subject:$subject " : " subject:$subject ";
 
             push @items,
                 {
                 valid        => 'no',
                 autocomplete => join( ' ', @$keywords ) . $autocomplete_string,
-                title        => ["to:$title"],
-                subtitle     => ["Used to specify the recipient. ($index/$candidate_num)"],
-                icon         => ['icon.png']
-                };
-        }
-    }
-    elsif ( $operator =~ /^subject:/ ) {
-        my $input         = $';
-        my $candidates    = $api->get_subjects($input);
-        my $candidate_num = @$candidates;
-        my $index         = 0;
-
-        for my $candidate (@$candidates) {
-            $index++;
-            my $autocomplete_string
-                = $#$keywords == -1 ? "subject:$candidate->{subject} " : " subject:$candidate->{subject} ";
-
-            push @items,
-                {
-                valid        => 'no',
-                autocomplete => join( ' ', @$keywords ) . $autocomplete_string,
-                title        => ["subject:$candidate->{subject}"],
+                title        => ["subject:$subject"],
                 subtitle     => ["Search for words in the subject line. ($index/$candidate_num)"],
                 icon         => ['icon.png']
                 };
@@ -116,7 +94,7 @@ sub get_candidates {
         };
     }
 
-    print XML::Simple::XMLout(
+    return XML::Simple::XMLout(
         { item => \@items },
         RootName      => 'items',
         NoSort        => 1,
@@ -125,7 +103,7 @@ sub get_candidates {
     );
 }
 
-sub output_items {
+sub get_items {
     my ( $messages, $keyword ) = @_;
 
     # Sort by sent date.
@@ -136,16 +114,18 @@ sub output_items {
     my $index    = 0;
     for my $item (@items) {
         $index++;
+        my $account_name = Encode::decode( 'utf-8-mac', $item->{account_name} );
+        my $mailbox      = Encode::decode( 'utf-8-mac', $item->{mailbox} );
+        my $subject = $item->{subject} ? Encode::decode( 'utf-8-mac', $item->{subject} ) : 'NO TITLE';
+        my $sender  = $item->{sender}  ? Encode::decode( 'utf-8-mac', $item->{sender} )  : '';
         $item = {
-            arg => Encode::decode( 'utf-8-mac', $item->{account_name} ) . ":::"
-                . Encode::decode( 'utf-8-mac', $item->{mailbox} )
-                . ":::$item->{id}",
-            title    => [ $item->{subject} ? Encode::decode( 'utf-8-mac', $item->{subject} ) : 'NO TITLE' ],
-            subtitle => $item->{sender} eq ''
-            ? [ Time::Piece->strptime( $item->{date_sent}, '%s' ) . " - $item->{sender_address} ($index/$item_num)" ]
-            : [       Time::Piece->strptime( $item->{date_sent}, '%s' ) . " - "
-                    . Encode::decode( 'utf-8-mac', $item->{sender} )
-                    . " <$item->{sender_address}> ($index/$item_num)"
+            arg      => "${account_name}:::${mailbox}:::$item->{id}",
+            title    => [$subject],
+            subtitle => [
+                $item->{sender} eq ''
+                ? Time::Piece->strptime( $item->{date_sent}, '%s' ) . " - $item->{sender_address} ($index/$item_num)"
+                : Time::Piece->strptime( $item->{date_sent}, '%s' )
+                    . " - $sender <$item->{sender_address}> ($index/$item_num)"
             ],
             icon => ['icon.png']
         };
@@ -171,7 +151,7 @@ sub output_items {
         }
     }
 
-    print XML::Simple::XMLout(
+    return XML::Simple::XMLout(
         { item => \@items },
         RootName      => 'items',
         NoSort        => 1,
