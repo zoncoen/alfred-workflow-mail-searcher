@@ -5,6 +5,7 @@ use utf8;
 use 5.014000;
 use autodie;
 
+use Getopt::Long qw/:config posix_default no_ignore_case bundling auto_help/;
 use Time::Piece;
 use XML::Simple;
 use Encode::UTF8Mac;
@@ -166,6 +167,11 @@ if ( !defined( $ARGV[0] ) ) {
     exit;
 }
 
+GetOptions(
+    \my %opt, qw/
+    without_cache
+/);
+
 my $argv = $ARGV[0];
 my $completion = $argv !~ /\s+$/ ? 1 : 0;
 my @keywords = map { Encode::decode( 'utf-8-mac', $_ ) } split( /\s/, $argv =~ s/\\\s*$//r );
@@ -175,7 +181,7 @@ my $api = MacOSX::App::Mail::API->new;
 my $cache = Cache::FileCache->new(
     {   cache_root         => '/tmp',
         namespace          => 'AlfredWorkflowMailSearcher',
-        default_expires_in => '5minutes',
+        default_expires_in => '15minutes',
         auto_purge_on_set  => 1,
         auto_purge_on_get  => 1,
     }
@@ -184,7 +190,7 @@ my $cache = Cache::FileCache->new(
 # Try to fetch the data from the cache.
 my $cache_data = $cache->get($argv);
 
-if ( defined($cache_data) ) {
+if ( defined($cache_data) && !($opt{without_cache}) ) {
     print $cache_data;
 }
 else {
