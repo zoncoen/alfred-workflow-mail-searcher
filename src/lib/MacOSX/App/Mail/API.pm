@@ -10,7 +10,6 @@ use Carp;
 use DBI;
 use URI::URL;
 use URI::Escape;
-use Encode::UTF8Mac;
 use Mac::PropertyList qw/ :all /;
 
 sub new {
@@ -63,18 +62,17 @@ sub _create_where_clause {
     foreach my $keyword (@keywords) {
         if ( $keyword =~ /^from:/ ) {
             $keyword = $self->{dbh}->quote( "%" . $' . "%" );
-            push( @where,
-                "( sender IN ( SELECT ROWID from addresses WHERE address LIKE $keyword OR comment LIKE $keyword ) )" );
+            push( @where, "( send.address LIKE $keyword OR send.comment LIKE $keyword )" );
         }
         elsif ( $keyword =~ /^to:/ ) {
             $keyword = $self->{dbh}->quote( "%" . $' . "%" );
             push( @where,
-                "( ROWID IN ( SELECT message_id FROM recipients WHERE address_id IN ( SELECT ROWID from addresses WHERE address LIKE $keyword OR comment LIKE $keyword ) ) )"
+                "( messages.ROWID IN ( SELECT message_id FROM recipients WHERE address_id IN ( SELECT ROWID from addresses WHERE address LIKE $keyword OR comment LIKE $keyword ) ) )"
             );
         }
         elsif ( $keyword =~ /^subject:/ ) {
             $keyword = $self->{dbh}->quote( "%" . $' . "%" );
-            push( @where, "( subject IN ( SELECT ROWID from subjects WHERE subject LIKE $keyword ) )" );
+            push( @where, "( subjects.subject LIKE $keyword )" );
         }
         elsif ( $keyword =~ /^is:/ ) {
             if ( $' =~ /^unread$/ ) {
@@ -90,39 +88,45 @@ sub _create_where_clause {
         else {
             $keyword = $self->{dbh}->quote( "%" . $keyword . "%" );
             push( @where,
-                "( snippet LIKE $keyword OR subject IN ( SELECT ROWID from subjects WHERE subject LIKE $keyword ))" );
+                "( snippet LIKE $keyword OR messages.subject IN ( SELECT ROWID from subjects WHERE subject LIKE $keyword ))"
+            );
         }
     }
     return @where;
 }
 
 sub _get_value {
-    my ( $self, $result ) = @_;
+    my ( $self, $pattern ) = @_;
 
-    my $subject = $self->_prepare("SELECT subject FROM subjects WHERE ROWID = ?");
-    my $sender  = $self->_prepare("SELECT address, comment FROM addresses WHERE ROWID = ?");
+    my $result = $self->_prepare(
+        "SELECT
+            messages.ROWID, subjects.subject, snippet, send.address, send.comment, recv.address, recv.comment, date_sent, url
+        FROM
+            messages
+        LEFT OUTER JOIN
+            subjects ON messages.subject = subjects.ROWID
+        LEFT OUTER JOIN
+            addresses send ON sender = send.ROWID
+        LEFT OUTER JOIN
+            recipients ON ( messages.ROWID = recipients.message_id AND recipients.type = '0' )
+        LEFT OUTER JOIN
+            addresses recv ON recipients.address_id = recv.ROWID
+        LEFT OUTER JOIN
+            mailboxes ON messages.mailbox = mailboxes.ROWID $pattern"
+    );
+    $self->_execute($result);
+
     my $reciever
         = $self->_prepare(
         "SELECT address, comment FROM addresses WHERE ROWID = (SELECT address_id FROM recipients WHERE message_id = ?)"
         );
-    my $url = $self->_prepare("SELECT url FROM mailboxes WHERE ROWID = ?");
 
     my $accounts
         = parse_plist_file( $ENV{"HOME"} . '/Library/Mail/V2/MailData/Accounts.plist' )->as_perl->{MailAccounts};
 
     my @messages = ();
     while ( my $row = $result->fetch() ) {
-        $self->_execute( $subject,  $row->[1] );
-        $self->_execute( $sender,   $row->[3] );
-        $self->_execute( $reciever, $row->[0] );
-        $self->_execute( $url,      $row->[5] );
-
-        my $subject_array  = $subject->fetch();
-        my $sender_array   = $sender->fetch();
-        my $reciever_array = $reciever->fetch();
-        my $url_array      = $url->fetch();
-
-        my $url          = URI::URL->new( $url_array->[0] );
+        my $url          = URI::URL->new( $row->[8] );
         my $account_uri  = $url->netloc;
         my $account_name = '';
 
@@ -136,13 +140,13 @@ sub _get_value {
         push @messages,
             {
             id               => $row->[0],
-            subject          => $subject_array->[0],
+            subject          => $row->[1],
             snippet          => $row->[2],
-            sender_address   => $sender_array->[0],
-            sender           => $sender_array->[1],
-            reciever_address => $reciever_array->[0],
-            reciever         => $reciever_array->[1],
-            date_sent        => $row->[4],
+            sender_address   => $row->[3],
+            sender           => $row->[4],
+            reciever_address => $row->[5],
+            reciever         => $row->[6],
+            date_sent        => $row->[7],
             account_uri      => $account_uri,
             account_name     => $account_name,
             mailbox          => uri_unescape( substr( $url->path, 1 ) ),
@@ -165,7 +169,7 @@ sub get_addresses {
         push @addresses,
             {
             address => $row->[0],
-            comment => Encode::decode( 'utf-8-mac', $row->[1] ),
+            comment => $row->[1],
             };
     }
 
@@ -182,7 +186,7 @@ sub get_subjects {
     $self->_execute($subjects);
 
     while ( my $row = $subjects->fetch() ) {
-        push @subjects, { subject => Encode::decode( 'utf-8-mac', $row->[0] ), };
+        push @subjects, { subject => $row->[0] };
     }
 
     return \@subjects;
@@ -197,10 +201,7 @@ sub search {
         my $pattern = join( " AND ", $self->_create_where_clause(@keywords) );
         $pattern = 'WHERE ' . $pattern if $pattern;
 
-        my $result
-            = $self->_prepare("SELECT ROWID, subject, snippet, sender, date_sent, mailbox FROM messages $pattern");
-        $self->_execute($result);
-        $messages = $self->_get_value($result);
+        $messages = $self->_get_value($pattern);
     }
     return $messages;
 }
