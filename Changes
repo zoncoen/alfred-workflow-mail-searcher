@@ -1,5 +1,9 @@
 Revision history for Alfred workflow "Mail Searcher".
 
+0.03 2014-2-16
+
+    - Enable cache.
+
 0.02 2014-2-12
 
     - Fix white space bug.
