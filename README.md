@@ -35,6 +35,16 @@ You can also use [Monkey Patch](https://github.com/BenziAhamed/monkeypatch-alfre
 mls {query}
 ```
 
+### Search messages without cache
+`mls` command uses file cache for speeding up.
+`mls!` command searches messages without cache.
+
+```
+mls! {query}
+```
+
+### Gmail like advanced search operators
+
 You can use Gmail like advanced search operators in search.
 The available operators are following:
 
